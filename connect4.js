@@ -9,10 +9,10 @@ let WIDTH = 7;
 let HEIGHT = 6;
 
 let currPlayer = 1; // active player: 1 or 2
-let board = []; // array of rows, each row is array of cells  (board[y][x])
+let board = []; // array of rows, each row is array of cells  (board[x][y])
 
 /** makeBoard: create in-JS board structure:
- *    board = array of rows, each row is array of cells  (board[y][x])
+ *    board = array of rows, each row is array of cells  (board[x][y])
  */
 
 function makeBoard() {
@@ -86,6 +86,7 @@ function findSpotForCol(x) {
 /** placeInTable: update DOM to place piece into HTML table of board */
 function placeInTable(x, y) {
   // TODO: make a div and insert into correct table cell
+  // TODO: Complete
   let piece = document.createElement("div");
   piece.classList.add("piece")
   piece.classList.add(`Player${currPlayer}`)
