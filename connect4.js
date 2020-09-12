@@ -14,15 +14,12 @@ let board = []; // array of rows, each row is array of cells  (board[x][y])
 /** makeBoard: create in-JS board structure:
  *    board = array of rows, each row is array of cells  (board[x][y])
  */
-
 function makeBoard() {
-  // TODO: set "board" to empty HEIGHT x WIDTH matrix array
-  // TODO: Complete, tests written
   board = [];
-  if (WIDTH<0 || HEIGHT<0){
-    console.log("Invalid dimension provided resetting dimensions to 0");
-    WIDTH = 0;
-    HEIGHT = 0;
+  if (WIDTH===0 || HEIGHT===0){
+    console.log("Invalid dimension provided resetting dimensions to 1");
+    WIDTH = 1;
+    HEIGHT = 1;
   }
   for (let x = 0; x < WIDTH; x++){
     board.push([]);
@@ -33,15 +30,9 @@ function makeBoard() {
 }
 
 /** makeHtmlBoard: make HTML table and row of column tops. */
-
 function makeHtmlBoard() {
-  
-  // TODO: get "htmlBoard" variable from the item in HTML w/ID of "board"
-  // TODO: Complete
   let htmlBoard = document.getElementById('board');
   
-  // TODO: add comment for this code
-  // TODO: Complete
   // This code blocks creates a top row assigns it an id of "column-top" and assigns a click handler to it
   // Then the code creates a series of cells with an id that corresponds to the column count (left to right)
   let top = document.createElement("tr");
@@ -56,8 +47,6 @@ function makeHtmlBoard() {
   }
   htmlBoard.append(top);
 
-  // TODO: add comment for this code
-  // TODO: Complete
   // This code creates the rest of the game board. The area that game pieces are placed in
   for (let y = 1; y <= HEIGHT; y++) {
     const row = document.createElement("tr");
@@ -79,14 +68,10 @@ function findSpotForCol(x) {
   }
   console.log("No spot found to place a piece");
   return null;
-  // TODO: write the real version of this, rather than always returning 0
-  // TODO: Complete
 }
 
 /** placeInTable: update DOM to place piece into HTML table of board */
 function placeInTable(x, y) {
-  // TODO: make a div and insert into correct table cell
-  // TODO: Complete
   let piece = document.createElement("div");
   piece.classList.add("piece")
   piece.classList.add(`Player${currPlayer}`)
@@ -99,8 +84,6 @@ function placeInTable(x, y) {
 /** endGame: announce game end */
 
 function endGame(msg) {
-  // TODO: pop up alert message
-  // TODO: Complete
   alert(msg);
 }
 
@@ -119,62 +102,67 @@ function handleClick(evt) {
 
   // place piece in board and add to HTML table
   placeInTable(x, y);
-
-  // TODO: add line to update in-memory board
-  // TODO: Complete
   board[x][y] = currPlayer;
 
   // check for win
-  if (checkForWin()) {
-    return endGame(`Player ${currPlayer} won!`);
+  if (checkForWin(currPlayer,board)) {
+    console.log("We have a winner");
+    setTimeout(()=>{endGame(`Player ${currPlayer} won!`)},500);
+    //return endGame(`Player ${currPlayer} won!`);
   }
 
   // check for tie
-  // TODO: check if all cells in board are filled; if so call, call endGame
-  // TODO: Complete
   console.log(board.some((column)=>{column.some(cell => cell === "E")}));
   if ((board.some((column)=>{column.some(cell => cell === "E")}))){
     return endGame(`This game has resulted in a tie`);
   }
 
   // switch players
-  // TODO: switch currPlayer 1 <-> 2
-  // TODO: Complete
   currPlayer===1?currPlayer=2:currPlayer=1;
   }
 
 /** checkForWin: check board cell-by-cell for "does a win start here?" */
-function checkForWin() {
+function checkForWin(player,gameboard) {
   function _win(cells) {
     // Check four cells to see if they're all color of current player
     //  - cells: list of four (y, x) cells
     //  - returns true if all are legal coordinates & all match currPlayer
-
+    console.log(player);
     return cells.every(
-      ([y, x]) =>
-        y >= 0 &&
-        y < HEIGHT &&
-        x >= 0 &&
-        x < WIDTH &&
-        board[y][x] === currPlayer
+      ([x, y]) => 
+        y >= 0 && 
+        y < HEIGHT && 
+        x >= 0 && 
+        x < WIDTH && 
+        gameboard[x][y] === player
     );
   }
 
-  // TODO: read and understand this code. Add comments to help you.
-  // Given a location x,y this code block defines an array of coordinates in each corresponding direction. These arrays are then tested for a win condition using the _win(cell) function (designated private)
-  for (let y = 0; y < HEIGHT; y++) {
-    for (let x = 0; x < WIDTH; x++) {
-      let horiz = [[y, x], [y, x + 1], [y, x + 2], [y, x + 3]];
-      let vert = [[y, x], [y + 1, x], [y + 2, x], [y + 3, x]];
-      let diagDR = [[y, x], [y + 1, x + 1], [y + 2, x + 2], [y + 3, x + 3]];
-      let diagDL = [[y, x], [y + 1, x - 1], [y + 2, x - 2], [y + 3, x - 3]];
+  //This code block defines an array of coordinates in each corresponding direction for each cell that's found to have a player piece in it. These arrays are then tested for a win condition using the _win(cell) function (designated private). The code block stops checking array coordinates
+  for (let x = 0; x < WIDTH; x++) {
+    for (let y = 0; y < HEIGHT; y++) {
+      //only process a win analysis on the pieces just played by the current player. Wasteful to analyze conditions with the player that previously went.
+      //debugger;
+      if (gameboard[x][y] === player){
+        let vert = [[x, y], [x, y+1], [x, y+2], [x, y+3]];
+        if (x<WIDTH-3){
+          let horiz = [[x, y], [x+1, y], [x+2, y], [x+3, y]];
+          let diagDR = [[x, y], [x+1, y-1], [x+2, y-2], [x+3, y-3]];
+          let diagUR = [[x, y], [x+1, y+1], [x+2, y+2], [x+3, y+3]];
+          if (_win(horiz) || _win(vert) || _win(diagDR) || _win(diagUR)) {
+            return true;
+          }
+        }
+        else{
+          if (_win(horiz)) {
+            return true;
+          }
 
-      if (_win(horiz) || _win(vert) || _win(diagDR) || _win(diagDL)) {
-        return true;
+        }
+
       }
     }
   }
 }
-
 makeBoard();
 makeHtmlBoard();
