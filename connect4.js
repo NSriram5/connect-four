@@ -32,7 +32,7 @@ function makeBoard() {
 /** makeHtmlBoard: make HTML table and row of column tops. */
 function makeHtmlBoard() {
   let htmlBoard = document.getElementById('board');
-  
+  htmlBoard.innerHTML = '';
   // This code blocks creates a top row assigns it an id of "column-top" and assigns a click handler to it
   // Then the code creates a series of cells with an id that corresponds to the column count (left to right)
   let top = document.createElement("tr");
@@ -58,25 +58,40 @@ function makeHtmlBoard() {
     htmlBoard.append(row);
   }
 }
+let resetbutton = document.querySelector('#reset');
+
+function reset(){
+  WIDTH = 7;
+  HEIGHT = 6;
+  currPlayer = 1;
+  board =[];
+  makeBoard();
+  makeHtmlBoard();
+}
+resetbutton.addEventListener('click',reset)
+
+
+let assignComp1 = document.querySelector('#assignComp1');
+let assignComp2 = document.querySelector('#assignComp2');
 
 /** findSpotForCol: given column x, return top empty y (null if filled) */
-function findSpotForCol(x) {
+function findSpotForCol(x,gameboard) {
   for (let y = 0; y<HEIGHT;y ++){ 
-    if (board[x][y] === "E"){
+    if (gameboard[x][y] === "E"){
       return y;
     }
   }
-  console.log("No spot found to place a piece");
+  console.log("No spot found to place a piece in the given column");
   return null;
 }
 
 /** placeInTable: update DOM to place piece into HTML table of board */
-function placeInTable(x, y) {
+function placeInTable(x, y,player) {
   let piece = document.createElement("div");
   piece.classList.add("piece")
-  piece.classList.add(`Player${currPlayer}`)
+  piece.classList.add(`Player${player}`)
   let target_cell = document.getElementById(`${x}-${y}`)
-  console.log(`${x} - ${y}`);
+  //console.log(`${x} - ${y}`);
   target_cell.append(piece);
 
 }
@@ -94,25 +109,24 @@ function handleClick(evt) {
   let x = +evt.target.id;
 
   // get next spot in column (if none, ignore click)
-  let y = findSpotForCol(x);
+  let y = findSpotForCol(x,board);
   if (y === null) {
     console.log("End of game board reached");
     return;
   }
 
   // place piece in board and add to HTML table
-  placeInTable(x, y);
+  placeInTable(x, y,currPlayer);
   board[x][y] = currPlayer;
 
   // check for win
   if (checkForWin(currPlayer,board)) {
     console.log("We have a winner");
-    setTimeout(()=>{endGame(`Player ${currPlayer} won!`)},500);
-    //return endGame(`Player ${currPlayer} won!`);
+    //Added a slight delay before the alert shows up.
+    setTimeout(()=>{endGame(`Player ${currPlayer} won!`)},250);
   }
 
   // check for tie
-  console.log(board.some((column)=>{column.some(cell => cell === "E")}));
   if ((board.some((column)=>{column.some(cell => cell === "E")}))){
     return endGame(`This game has resulted in a tie`);
   }
@@ -126,8 +140,7 @@ function checkForWin(player,gameboard) {
   function _win(cells) {
     // Check four cells to see if they're all color of current player
     //  - cells: list of four (y, x) cells
-    //  - returns true if all are legal coordinates & all match currPlayer
-    console.log(player);
+    //  - returns true if all are legal coordinates & all match 
     return cells.every(
       ([x, y]) => 
         y >= 0 && 
@@ -138,13 +151,15 @@ function checkForWin(player,gameboard) {
     );
   }
 
-  //This code block defines an array of coordinates in each corresponding direction for each cell that's found to have a player piece in it. These arrays are then tested for a win condition using the _win(cell) function (designated private). The code block stops checking array coordinates
+  //This code block defines an array of coordinates in each corresponding direction for each cell that's found to have a player piece in it. These arrays are then tested for a win condition using the _win(cell) function (designated private).
   for (let x = 0; x < WIDTH; x++) {
     for (let y = 0; y < HEIGHT; y++) {
       //only process a win analysis on the pieces just played by the current player. Wasteful to analyze conditions with the player that previously went.
       //debugger;
       if (gameboard[x][y] === player){
         let vert = [[x, y], [x, y+1], [x, y+2], [x, y+3]];
+
+        //Testing as long as there's room to check for patterns to the right
         if (x<WIDTH-3){
           let horiz = [[x, y], [x+1, y], [x+2, y], [x+3, y]];
           let diagDR = [[x, y], [x+1, y-1], [x+2, y-2], [x+3, y-3]];
@@ -153,8 +168,9 @@ function checkForWin(player,gameboard) {
             return true;
           }
         }
+        //No space to check for patterns that travel to the right. Only test vertical patterns
         else{
-          if (_win(horiz)) {
+          if (_win(vert)) {
             return true;
           }
 
@@ -164,5 +180,43 @@ function checkForWin(player,gameboard) {
     }
   }
 }
+
+function findNextLegalMoves(gameboard){
+  let listofturns = [];
+  for (let x = 0; x<WIDTH; x++){
+    let y = findSpotForCol(x,gameboard);
+    if (y !== null){
+      listofturns.push([x,y]);
+    }
+  }
+  return listofturns;
+}
+
+function buildOutcomesObjectrecursive(player,gameboard,depthconstraint = 3){
+  let outcomes = [];
+  //let nextLegalMoves = findNextLegalMoves(gameboard);
+  for (let move of findNextLegalMoves(gameboard)){
+    //need a deep copy of the gameboard
+    let stateobj = {
+      x:move[0],
+      y:move[1],
+      win:false,
+      next:undefined
+    }
+    let newgameboard = gameboard.map((arr)=> arr.slice());
+    newgameboard[move[0]][move[1]] = player;
+    if (checkForWin(player,newgameboard) || depthconstraint === 0){
+      stateobj.win = true;
+    }
+    else {
+
+      stateobj.next = buildOutcomesObjectrecursive(player,newgameboard,depthconstraint - 1);
+    }
+    // checkForWin()?stateobj.win=true:stateobj.next=buildOutcomesObjectrecursive(player,newgameboard,depthconstraint - 1);
+    outcomes.push(stateobj);
+  }
+  return outcomes;
+}
+
 makeBoard();
 makeHtmlBoard();

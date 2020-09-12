@@ -26,15 +26,15 @@ describe('Board making tests',()=>{
     })
 
     afterEach(()=>{
-        WIDTH = 7;
-        HEIGHT = 6;
+        reset();
     })
 })
 describe('Win condition testing',()=>{
     beforeEach(()=>{
-        //
+        WIDTH = 4;
+        HEIGHT = 4;
     })
-    it("returns true that there's a win for someone. Horizontal test",()=>{
+    it("returns true that there's a win for someone. Horizontal test",()=>{ 
         let testboard = [[1,0,0,0],[1,0,0,0],[1,0,0,0],[1,0,0,0]];
         console.log(checkForWin(1,testboard));
         expect(checkForWin(1,testboard)).toEqual(true);
@@ -47,8 +47,16 @@ describe('Win condition testing',()=>{
         let testboard = [[0,0,0,1],[0,0,1,0],[0,1,0,0],[1,0,0,0]];
         expect(checkForWin(1,testboard)).toEqual(true);
     })
-    it("returns true that there's a win for someon. UpwardRight Diagonal test",()=>{
+    it("returns true that there's a win for someone. UpwardRight Diagonal test",()=>{
         let testboard = [[1,0,0,0],[0,1,0,0],[0,0,1,0],[0,0,0,1]];
         expect(checkForWin(1,testboard)).toEqual(true);
+    })
+    it("returns true that there's a win for someone. Far right vertical test",()=>{
+        let testboard = [[0,0,0,0],[0,0,0,0],[0,0,0,0],[1,1,1,1]]
+        expect(checkForWin(1,testboard)).toEqual(true);
+    })
+
+    afterEach(()=>{
+        reset();
     })
 })

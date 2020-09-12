@@ -5,6 +5,10 @@
   border: solid 1px #666;
 }
 
+#game{
+  padding: 10px;
+}
+
 /* pieces are div within game table cells: draw as colored circles */
 .piece {
   margin: 5px;
