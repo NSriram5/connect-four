@@ -36,7 +36,6 @@ describe('Win condition testing',()=>{
     })
     it("returns true that there's a win for someone. Horizontal test",()=>{ 
         let testboard = [[1,0,0,0],[1,0,0,0],[1,0,0,0],[1,0,0,0]];
-        console.log(checkForWin(1,testboard));
         expect(checkForWin(1,testboard)).toEqual(true);
     })
     it("returns true that there's a win for someone. Vertical test",()=>{
@@ -58,5 +57,26 @@ describe('Win condition testing',()=>{
 
     afterEach(()=>{
         reset();
+    })
+})
+describe("forward play analysis test, builds object of possible futures",()=>{
+    beforeEach(()=>{
+        
+    })
+    it("returns an array of objects two of the objects have a win property = true",()=>{
+        let testboard = [
+            ['E','E','E','E','E','E'],
+            [1,'E','E','E','E','E'],
+            [1,'E','E','E','E','E'],
+            [1,1,1,'E','E','E'],
+            [2,2,2,'E','E','E'],
+            [2,'E','E','E','E','E'],
+            [2,'E','E','E','E','E'],
+        ];
+        let a = buildOutcomesObject(1,testboard,2);
+        console.log(a);
+        let b = reviewOutcomesObject(a);
+        console.log(b);
+        debugger;
     })
 })
