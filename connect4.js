@@ -81,8 +81,8 @@ function findSpotForCol(x,gameboard) {
       return y;
     }
   }
-  debugger;
-  console.log("No spot found to place a piece in the given column");
+  //debugger;
+  //console.log("No spot found to place a piece in the given column");
   return null;
 }
 
@@ -92,7 +92,6 @@ function placeInTable(x, y,player) {
   piece.classList.add("piece")
   piece.classList.add(`Player${player}`)
   let target_cell = document.getElementById(`${x}-${y}`)
-  //console.log(`${x} - ${y}`);
   target_cell.append(piece);
 
 }
@@ -255,12 +254,12 @@ function buildOutcomesObjectrecursive(player,gameboard,depthconstraint = 3){
     //need a deep copy of the gameboard
     let newgameboard = gameboard.map((arr)=> arr.slice());
     newgameboard[move[0]][move[1]] = player;
-    if (checkForWin(player,newgameboard) || depthconstraint === 0){
+    if (checkForWin(player,newgameboard)){
       stateobj.win = true;
       newgameboard[move[0]][move[1]] = 'W';
       // gameboard[move[0]][move[1]] = 'W';
     }
-    else {
+    else if (depthconstraint !== 0) {
       stateobj.next = buildOutcomesObjectrecursive(player,newgameboard,depthconstraint - 1);
     }
     
@@ -271,37 +270,65 @@ function buildOutcomesObjectrecursive(player,gameboard,depthconstraint = 3){
 }
 
 
-//build an array with number of wins possible. Each index (1 index) is a the cost function of those wins
-function reviewOutcomesObject(outcomes){
-  function createFutureWinsTree(outcomes,previousWins){
-    let winsInCurrent = outcomes.reduce((sum,outcome)=>{return sum + outcome.win;},0);
-    let newWins = winsInCurrent - previousWins;
-    if (winsInCurrent === undefined){debugger;}
-    if (outcomes !== undefined){
-      let arrOfFutureWins = outcomes.map((outcome)=>{
-        if (outcome.win === true){
-          
+function reviewOutcomesTree(outcomes){
+  function recursiveWinCostRatioGenerator(outcomes,cost){
+    let payoff = outcomes.reduce((wins,outcome)=>wins+outcome.win,0)
+    let ratio = payoff/cost;
+    if (ratio > 1){return ratio;}
+    else if (outcomes.every((outcome)=>outcome.next===undefined)){
+      return ratio;
+    }
+    else{
+      let futureTotal = outcomes.reduce((benefit,outcome)=>{
+        //remove after debugging
+        if (isNaN(benefit)){debugger;}
+        if (outcome.win !== true){
+          return benefit + recursiveWinCostRatioGenerator(outcome.next,cost+1);
         }
-        outcome.win?"FWin":createFutureWinsTree(outcome.next,winsInCurrent)
-      });
-      //debugger;
-      return [newWins,arrOfFutureWins];
+        else {return benefit;}
+      },0);
+      let b = futureTotal / (outcomes.length - payoff)/ cost;
+      return futureTotal / (outcomes.length - payoff)/ cost;
     }
-    else {return [newWins];}
-  } 
-  
-  let topLayerWins = outcomes.reduce((sum,outcome)=>sum+outcome.win,0);
-  let summary = outcomes.reduce((sum,outcome)=>{
-    let futureWins;
-    if (outcome.win === false){
-      futureWins = createFutureWinsTree(outcome.next,topLayerWins);
-    }
-    else{futureWins = "W";}
-    sum.push([outcome.x,outcome.y,outcome.win,futureWins]);
-    return sum;
-  },[])
-  return summary;
+  }
+  let costPayOffSummary = outcomes.map((outcome)=>{
+    if (outcome.win === true){return 100;}
+    else{return recursiveWinCostRatioGenerator(outcome.next,1);}
+  })
+  return costPayOffSummary;
 }
+
+//build an array with number of wins possible. Each index (1 index) is a the cost function of those wins
+// function reviewOutcomesObject(outcomes){
+//   function createFutureWinsTree(outcomes,previousWins){
+//     let winsInCurrent = outcomes.reduce((sum,outcome)=>{return sum + outcome.win;},0);
+//     let newWins = winsInCurrent - previousWins;
+//     if (winsInCurrent === undefined){debugger;}
+//     if (outcomes !== undefined){
+//       let arrOfFutureWins = outcomes.map((outcome)=>{
+//         if (outcome.win === true){
+          
+//         }
+//         outcome.win?"FWin":createFutureWinsTree(outcome.next,winsInCurrent)
+//       });
+//       //debugger;
+//       return [newWins,arrOfFutureWins];
+//     }
+//     else {return [newWins];}
+//   } 
+  
+//   let topLayerWins = outcomes.reduce((sum,outcome)=>sum+outcome.win,0);
+//   let summary = outcomes.reduce((sum,outcome)=>{
+//     let futureWins;
+//     if (outcome.win === false){
+//       futureWins = createFutureWinsTree(outcome.next,topLayerWins);
+//     }
+//     else{futureWins = "W";}
+//     sum.push([outcome.x,outcome.y,outcome.win,futureWins]);
+//     return sum;
+//   },[])
+//   return summary;
+// }
 
 makeBoard();
 makeHtmlBoard();
