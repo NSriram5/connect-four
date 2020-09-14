@@ -77,6 +77,20 @@ describe("forward play analysis test, builds object of possible futures",()=>{
         console.log(a);
         let b = reviewOutcomesTree(a);
         console.log(b);
-        debugger;
+    })
+    it("returns an array of objects two of the objects have a win property = true",()=>{
+        let testboard = [
+            ['E','E','E','E','E','E'],
+            ['E','E','E','E','E','E'],
+            ['E','E','E','E','E','E'],
+            ['E','E','E','E','E','E'],
+            ['E','E','E','E','E','E'],
+            ['E','E','E','E','E','E'],
+            ['E','E','E','E','E','E'],
+        ];
+        let a = buildOutcomesObjectrecursive(1,testboard,2);
+        console.log(a);
+        let b = reviewOutcomesTree(a);
+        console.log(b);
     })
 })

@@ -10,6 +10,7 @@ let HEIGHT = 6;
 
 let currPlayer = 1; // active player: 1 or 2
 let board = []; // array of rows, each row is array of cells  (board[x][y])
+let computerPlayer = 0;
 
 /** makeBoard: create in-JS board structure:
  *    board = array of rows, each row is array of cells  (board[x][y])
@@ -59,7 +60,6 @@ function makeHtmlBoard() {
   }
 }
 let resetbutton = document.querySelector('#reset');
-
 function reset(){
   WIDTH = 7;
   HEIGHT = 6;
@@ -68,11 +68,21 @@ function reset(){
   makeBoard();
   makeHtmlBoard();
 }
-resetbutton.addEventListener('click',reset)
+resetbutton.addEventListener('click',reset);
 
-
-let assignComp1 = document.querySelector('#assignComp1');
-let assignComp2 = document.querySelector('#assignComp2');
+let computerAssign = document.querySelectorAll('.assignComp');
+function assignComp(evt){
+  if (evt.target.id === "assignComp1"){
+    computerPlayer = 1;
+  }
+  else if (evt.target.id === "assignComp2"){
+    computerPlayer = 2;
+  }
+  else {computerPlayer = 0;}
+  if (currPlayer === computerPlayer){computerPlays();turnResolution();}
+  console.log(`Computer assigned to ${computerPlayer}`);
+}
+for (button of computerAssign){button.addEventListener('click',assignComp);}
 
 /** findSpotForCol: given column x, return top empty y (null if filled) */
 function findSpotForCol(x,gameboard) {
@@ -119,21 +129,77 @@ function handleClick(evt) {
   placeInTable(x, y,currPlayer);
   board[x][y] = currPlayer;
 
+  turnResolution();
+
+  //if current player is a computer player, computer analyzes the board for both players and decides a defensive play if necessary otherwise picks an offensive player
+  if (computerPlayer === currPlayer){
+    computerPlays();
+    turnResolution();
+  }
+}
+
+function computerPlays(){
+  console.log("Computer's turn")
+  let otherPlayer;
+  currPlayer===1?otherPlayer=2:otherPlayer=1;
+  let defensiveMoves = buildOutcomesObjectrecursive(otherPlayer,board,3)
+  let offsensiveMoves = buildOutcomesObjectrecursive(currPlayer,board,3)
+  let defenseAnalysis = reviewOutcomesTree(defensiveMoves);
+  let offenseAnalysis = reviewOutcomesTree(offsensiveMoves);
+  console.log("Defensive Analysis");
+  console.log(defenseAnalysis);
+  console.log("Offensive Analysis");
+  console.log(offenseAnalysis);
+  let myMove = findNextLegalMoves(board)[0];
+
+  //pick the move with a good win/cost ratio
+  let bestScore = offenseAnalysis.reduce((highscore,score)=>highscore<score?score:highscore,0);
+  let moveIndex = offenseAnalysis.findIndex((score)=>score>=bestScore);
+  Mymove = [offsensiveMoves[moveIndex].x,offsensiveMoves[moveIndex].y];
+  console.log(`Longterm strategy is to play at ${myMove}`)
+  //third highest priority is to stop an opponent future win
+  for (let i = 0;i<defensiveMoves.length;i++){
+    if (defenseAnalysis[i]>1){
+      myMove = [defensiveMoves[i].x,defensiveMoves[i].y];
+      console.log(`Defensive strategy is to play at ${myMove}`)
+    }
+  }
+
+  //second highest priority is to stop an opponent win
+  for (let i = 0;i<defensiveMoves.length;i++){
+    if (defenseAnalysis[i]===100){
+      myMove = [defensiveMoves[i].x,defensiveMoves[i].y];
+      console.log(`Avoid loss strategy is to play at ${myMove}`)
+    }
+  }
+  //highest priority is to win
+  for (let i = 0;i<offsensiveMoves.length;i++){
+    if (offenseAnalysis[i]===100){
+      myMove = [offsensiveMoves[i].x,offsensiveMoves[i].y];
+      console.log(`Take win is to play at ${myMove}`)
+    }
+  }
+  console.log(`About to place piece at ${myMove}`)
+  placeInTable(myMove[0],myMove[1],currPlayer);
+  board[myMove[0]][myMove[1]] = currPlayer;
+}
+
+function turnResolution(){
   // check for win
   if (checkForWin(currPlayer,board)) {
     console.log("We have a winner");
+    //Need to create the banner now, otherwise the currPlayer resolves to the wrong one (with the timeout delay.)
+    let winBanner = `Player ${currPlayer} won!`;
     //Added a slight delay before the alert shows up.
-    setTimeout(()=>{endGame(`Player ${currPlayer} won!`)},250);
+    setTimeout(()=>{endGame(winBanner)},250);
   }
-
   // check for tie
   if ((board.some((column)=>{column.some(cell => cell === "E")}))){
     return endGame(`This game has resulted in a tie`);
   }
-
   // switch players
   currPlayer===1?currPlayer=2:currPlayer=1;
-  }
+}
 
 /** checkForWin: check board cell-by-cell for "does a win start here?" */
 function checkForWin(player,gameboard) {
@@ -191,58 +257,8 @@ function findNextLegalMoves(gameboard){
   return listofturns;
 }
 
-// function buildOutcomesObject(player, gameboard,depthconstraint = 3){
-//   let outcomes = [];
-//   let movequeue = findNextLegalMoves(gameboard);
-//   let turn = 1;
-//   movequeue.forEach((move)=>{move.push(gameboard);move.push(turn);});
-//   while (movequeue.length > 0){
-//     if (movequeue[0][3] > depthconstraint){
-//       movequeue.shift();
-//     }
-//     else{
-//       let movedetails = movequeue.shift();
-//       let move = [movedetails[0],movedetails[1]];
-
-//        let newgameboard = movedetails[2].map((arr)=>arr.slice());
-//       let stateobj = {
-//         x:move[0],
-//         y:move[1],
-//         win:false,
-//         next:[],
-//         turn:movedetails[3],
-//         board:newgameboard
-//       }
-//       newgameboard[move[0]][move[1]] = player;
-//       if (checkForWin(player,newgameboard)){
-//         newgameboard[move[0]][move[1]] = 'W';
-//         movedetails[2][move[0]][move[1]] = 'W';
-//         stateobj.win = true;
-//       }
-//       else{
-//         let newmoves = findNextLegalMoves(newgameboard);
-//         if (stateobj.turn < depthconstraint){
-//           newmoves.forEach((move)=>{move.push(newgameboard);move.push(stateobj.turn+1);})
-//           movequeue.push(...newmoves);
-//         }
-//       }
-//       outcomes.push(stateobj);
-//       if (outcomes.length > 200){
-//         debugger;
-//       }
-//       if (outcomes.length > 250){
-//         return outcomes;
-//       }
-//     }
-
-//   }
-//   return outcomes;
-// }
-
-
 function buildOutcomesObjectrecursive(player,gameboard,depthconstraint = 3){
   let outcomes = [];
-  //let nextLegalMoves = findNextLegalMoves(gameboard);
   for (let move of findNextLegalMoves(gameboard)){
     
     let stateobj = {
@@ -257,7 +273,6 @@ function buildOutcomesObjectrecursive(player,gameboard,depthconstraint = 3){
     if (checkForWin(player,newgameboard)){
       stateobj.win = true;
       newgameboard[move[0]][move[1]] = 'W';
-      // gameboard[move[0]][move[1]] = 'W';
     }
     else if (depthconstraint !== 0) {
       stateobj.next = buildOutcomesObjectrecursive(player,newgameboard,depthconstraint - 1);
@@ -269,7 +284,6 @@ function buildOutcomesObjectrecursive(player,gameboard,depthconstraint = 3){
   return outcomes;
 }
 
-
 function reviewOutcomesTree(outcomes){
   function recursiveWinCostRatioGenerator(outcomes,cost){
     let payoff = outcomes.reduce((wins,outcome)=>wins+outcome.win,0)
@@ -280,8 +294,6 @@ function reviewOutcomesTree(outcomes){
     }
     else{
       let futureTotal = outcomes.reduce((benefit,outcome)=>{
-        //remove after debugging
-        if (isNaN(benefit)){debugger;}
         if (outcome.win !== true){
           return benefit + recursiveWinCostRatioGenerator(outcome.next,cost+1);
         }
@@ -298,37 +310,6 @@ function reviewOutcomesTree(outcomes){
   return costPayOffSummary;
 }
 
-//build an array with number of wins possible. Each index (1 index) is a the cost function of those wins
-// function reviewOutcomesObject(outcomes){
-//   function createFutureWinsTree(outcomes,previousWins){
-//     let winsInCurrent = outcomes.reduce((sum,outcome)=>{return sum + outcome.win;},0);
-//     let newWins = winsInCurrent - previousWins;
-//     if (winsInCurrent === undefined){debugger;}
-//     if (outcomes !== undefined){
-//       let arrOfFutureWins = outcomes.map((outcome)=>{
-//         if (outcome.win === true){
-          
-//         }
-//         outcome.win?"FWin":createFutureWinsTree(outcome.next,winsInCurrent)
-//       });
-//       //debugger;
-//       return [newWins,arrOfFutureWins];
-//     }
-//     else {return [newWins];}
-//   } 
-  
-//   let topLayerWins = outcomes.reduce((sum,outcome)=>sum+outcome.win,0);
-//   let summary = outcomes.reduce((sum,outcome)=>{
-//     let futureWins;
-//     if (outcome.win === false){
-//       futureWins = createFutureWinsTree(outcome.next,topLayerWins);
-//     }
-//     else{futureWins = "W";}
-//     sum.push([outcome.x,outcome.y,outcome.win,futureWins]);
-//     return sum;
-//   },[])
-//   return summary;
-// }
 
 makeBoard();
 makeHtmlBoard();
