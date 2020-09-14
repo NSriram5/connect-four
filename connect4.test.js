@@ -73,7 +73,7 @@ describe("forward play analysis test, builds object of possible futures",()=>{
             [2,'E','E','E','E','E'],
             [2,'E','E','E','E','E'],
         ];
-        let a = buildOutcomesObject(1,testboard,2);
+        let a = buildOutcomesObjectrecursive(1,testboard,2);
         console.log(a);
         let b = reviewOutcomesObject(a);
         console.log(b);
