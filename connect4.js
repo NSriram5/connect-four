@@ -60,6 +60,9 @@ function makeHtmlBoard() {
   }
 }
 let resetbutton = document.querySelector('#reset');
+let playerAssign = document.querySelectorAll('.assign');
+let assignNotify = document.querySelector(`#playerAssignment`);
+
 function reset(){
   WIDTH = 7;
   HEIGHT = 6;
@@ -70,19 +73,26 @@ function reset(){
 }
 resetbutton.addEventListener('click',reset);
 
-let computerAssign = document.querySelectorAll('.assignComp');
+
 function assignComp(evt){
   if (evt.target.id === "assignComp1"){
     computerPlayer = 1;
+    assignNotify.innerHTML = `<p>The Computer Player is Red<p>`
   }
   else if (evt.target.id === "assignComp2"){
     computerPlayer = 2;
+    assignNotify.innerHTML = `<p>The Computer Player is Blue<p>`
+  }
+  else if (evt.target.id === "assignHuman"){
+    computerPlayer = 0;
+    assignNotify.innerHTML = `<p>Both players are human<p>`
+
   }
   else {computerPlayer = 0;}
   if (currPlayer === computerPlayer){computerPlays();turnResolution();}
   console.log(`Computer assigned to ${computerPlayer}`);
 }
-for (button of computerAssign){button.addEventListener('click',assignComp);}
+for (button of playerAssign){button.addEventListener('click',assignComp);}
 
 /** findSpotForCol: given column x, return top empty y (null if filled) */
 function findSpotForCol(x,gameboard) {
@@ -139,11 +149,21 @@ function handleClick(evt) {
 }
 
 function computerPlays(){
+  function findRandomIndexOfHighestNumber(arr){
+    let highestnum = Math.max(...arr);
+    let locationsOfHighest = arr.reduce((lookup,num,index)=>{
+      if (num===highestnum){lookup.push(index);return lookup;}
+      else{return lookup;}
+    },[]);
+    console.log(locationsOfHighest);
+    return locationsOfHighest[Math.floor(locationsOfHighest.length * Math.random())];
+  }
+
   console.log("Computer's turn")
   let otherPlayer;
   currPlayer===1?otherPlayer=2:otherPlayer=1;
-  let defensiveMoves = buildOutcomesObjectrecursive(otherPlayer,board,3)
-  let offsensiveMoves = buildOutcomesObjectrecursive(currPlayer,board,3)
+  let defensiveMoves = buildOutcomesObjectrecursive(otherPlayer,board,4)
+  let offsensiveMoves = buildOutcomesObjectrecursive(currPlayer,board,4)
   let defenseAnalysis = reviewOutcomesTree(defensiveMoves);
   let offenseAnalysis = reviewOutcomesTree(offsensiveMoves);
   console.log("Defensive Analysis");
@@ -153,9 +173,8 @@ function computerPlays(){
   let myMove = findNextLegalMoves(board)[0];
 
   //pick the move with a good win/cost ratio
-  let bestScore = offenseAnalysis.reduce((highscore,score)=>highscore<score?score:highscore,0);
-  let moveIndex = offenseAnalysis.findIndex((score)=>score>=bestScore);
-  Mymove = [offsensiveMoves[moveIndex].x,offsensiveMoves[moveIndex].y];
+  let moveIndex = findRandomIndexOfHighestNumber(offenseAnalysis);
+  myMove = [offsensiveMoves[moveIndex].x,offsensiveMoves[moveIndex].y];
   console.log(`Longterm strategy is to play at ${myMove}`)
   //third highest priority is to stop an opponent future win
   for (let i = 0;i<defensiveMoves.length;i++){
